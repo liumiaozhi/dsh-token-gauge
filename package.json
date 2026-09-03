@@ -1,0 +1,45 @@
+{
+  "name": "dsh-token-gauge",
+  "version": "0.1.0",
+  "description": "DSH Web 侧边栏机车风格 Token 用量与费用仪表盘插件（多风格/多配色/限额/中英文/报表导出）",
+  "displayName": "Token 机车仪表盘 / Token Gauge Dashboard",
+  "type": "module",
+  "main": "./lib/index.js",
+  "dsh": {
+    "host": "./lib/index.js",
+    "client": "./lib/client.js"
+  },
+  "files": [
+    "lib",
+    "src",
+    "cordis.patch.yml",
+    "README.md",
+    "README.en.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "prepack": "node build.mjs"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek",
+    "deepseek-harness",
+    "token-usage",
+    "token-cost",
+    "dashboard",
+    "gauge",
+    "sidebar"
+  ],
+  "author": "WorkBuddy User",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "esbuild": "^0.21.5",
+    "typescript": "^5.4.0"
+  }
+}

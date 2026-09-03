@@ -1,0 +1,9 @@
+# 本地开发 overlay：将本插件注入 DSH web profile。
+# 用法（先构建产物）：
+#   node build.mjs
+#   dsh web --patch ./cordis.patch.yml
+# 或在已装 dsh 的情况下直接以本地包安装（会读取 package.json 的 dsh 字段，推荐）：
+#   dsh plugin --profile web add .
+- insert:
+  - id: dsh-token-gauge
+    name: './src/host.ts'

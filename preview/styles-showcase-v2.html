@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>dsh-token-gauge · 布局方案B预览（金额上移·未改源码）</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; font-family:"Segoe UI", system-ui, -apple-system, sans-serif;
+    background:#0b0e14; color:#e6edf5; padding:24px; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .sub { color:#8b95a3; font-size:13px; margin-bottom:6px; }
+  .sub code { background:#1a1f27; padding:2px 6px; border-radius:5px; color:#22d3ee; }
+  .banner { background:#16110a; border:1px solid #d4af37; border-radius:10px; padding:10px 14px;
+    color:#f3d27a; font-size:13px; margin:10px 0 18px; line-height:1.6; }
+  .banner b { color:#ffe39a; }
+
+  /* ===== 控制条 ===== */
+  .controls { background:#12161e; border:1px solid #232a35; border-radius:12px;
+    padding:14px 16px; margin-bottom:22px; display:flex; flex-wrap:wrap; gap:18px; align-items:flex-end; }
+  .controls .grp { display:flex; flex-direction:column; gap:6px; }
+  .controls .grp > label { font-size:11px; color:#8b95a3; text-transform:uppercase; letter-spacing:.5px; }
+  .chip-row { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { cursor:pointer; border:1px solid #2b323d; background:#0e1116; color:#cdd6e2;
+    border-radius:999px; padding:5px 11px; font-size:12px; user-select:none; }
+  .chip.on { border-color:#22d3ee; color:#22d3ee; box-shadow:0 0 8px rgba(34,211,238,.45); }
+  .swatch { width:14px; height:14px; border-radius:50%; display:inline-block; margin-right:5px;
+    vertical-align:-2px; border:1px solid rgba(255,255,255,.25); }
+  input[type=range]{ width:220px; }
+  input[type=number]{ background:#0e1116; border:1px solid #2b323d; color:#e6edf5;
+    border-radius:8px; padding:6px 9px; font-size:13px; width:130px; }
+
+  /* ===== 主舞台 ===== */
+  .stage { display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; margin-bottom:30px; }
+  .main-panel { flex:0 0 320px; }
+
+  /* ===== 风格网格 ===== */
+  .grid-title { font-size:15px; font-weight:700; margin:0 0 12px; color:#cdd6e2; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; }
+  .cell { background:#12161e; border:1px solid #232a35; border-radius:16px; padding:14px; }
+  .cell .tag { font-size:12px; color:#8b95a3; margin-bottom:10px; display:flex; justify-content:space-between; }
+  .cell .tag b { color:#cdd6e2; font-weight:600; }
+  .cell .tag .pal { color:#7fb6cf; }
+
+  /* ===== 仪表盘容器（与插件一致） ===== */
+  .tg-root {
+    --c-bg:#04111f; --c-panel:#072438; --c-main:#22d3ee; --c-track:#0b3550;
+    --c-tick:#7fe9ff; --c-needle:#22d3ee; --c-num:#d6fbff; --c-danger:#ff4d6d;
+    --c-glow:rgba(34,211,238,0.55); --c-sub:#7fb6cf; --c-font:"Segoe UI",system-ui,sans-serif;
+    box-sizing:border-box; color:var(--c-num); font-family:var(--c-font);
+    height:100%; display:flex; flex-direction:column; padding:10px; gap:6px;
+    background:linear-gradient(160deg, var(--c-bg), var(--c-panel));
+    border-radius:14px; overflow:auto; position:relative;
+  }
+  .tg-root * { box-sizing:border-box; }
+  .tg-head { display:flex; align-items:center; justify-content:space-between; }
+  .tg-title { font-size:13px; font-weight:700; letter-spacing:.5px; color:var(--c-num); }
+  .tg-gear {
+    cursor:pointer; border:1px solid var(--c-track); background:var(--c-panel); color:var(--c-main);
+    border-radius:8px; width:28px; height:28px; font-size:14px; line-height:1; display:flex;
+    align-items:center; justify-content:center;
+  }
+  .tg-gear:hover { box-shadow:0 0 10px var(--c-glow); }
+
+  /* ===== 布局方案B：读数整体上移，紧贴表盘底部 ===== */
+  /* 关键改动（vs 现版）：gauge-wrap gap 2px→0，readout margin-top 2px→0，
+     金额/用量进一步收紧，4格 margin-top 8px→4px。金额位于指针下方、表盘最低处。 */
+  .tg-gauge-wrap { display:flex; flex-direction:column; align-items:center; gap:0; }
+  .tg-gauge { width:100%; max-width:200px; height:auto; display:block; filter:drop-shadow(0 0 6px var(--c-glow)); }
+  .tg-track { fill:none; stroke:var(--c-track); stroke-width:14; stroke-linecap:round; }
+  .tg-danger { fill:none; stroke:var(--c-danger); stroke-width:14; stroke-linecap:round; opacity:0; }
+  .tg-tick { stroke:var(--c-tick); stroke-width:2; }
+  .tg-ticklabel { fill:var(--c-sub); font-size:9px; font-family:var(--c-font); }
+  .tg-hub { fill:var(--c-main); }
+  .tg-needle { fill:var(--c-needle); transition:transform .6s cubic-bezier(.34,1.4,.5,1); transform-box:view-box; transform-origin:100px 100px; }
+  .tg-needle.tg-over { fill:var(--c-danger); }
+  /* 读数块整体上移、用负边距上提贴住表盘底部 */
+  .tg-readout { text-align:center; width:100%; margin-top:-16px; }
+  /* 金额：指针正下方、表盘最低位置，紧贴表盘 */
+  .tg-cost { font-size:17px; font-weight:700; color:var(--c-main); margin-top:0; }
+  /* token 用量：在金额下方 */
+  .tg-usage { font-size:22px; font-weight:800; color:var(--c-num); line-height:1.1; margin-top:1px; }
+  .tg-usage small { font-size:12px; color:var(--c-sub); font-weight:600; margin-left:4px; }
+  /* 4 格：整体进一步上移 */
+  .tg-cards { display:grid; grid-template-columns:1fr 1fr; gap:6px; width:100%; margin-top:4px; }
+  .tg-card { background:var(--c-panel); border:1px solid var(--c-track); border-radius:8px; padding:6px 8px; }
+  .tg-card .k { font-size:10px; color:var(--c-sub); }
+  .tg-card .v { font-size:13px; font-weight:700; color:var(--c-num); }
+
+  /* 风格差异化装饰（与插件完全一致） */
+  .tg-style-ev .tg-gauge-wrap { backdrop-filter:blur(2px); }
+  .tg-style-raw {
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 2px, rgba(0,0,0,.06) 2px 4px),
+      linear-gradient(160deg, #2a2a2a, #4a4a4a);
+    border:3px solid #6b6b6b;
+  }
+  .tg-style-raw .tg-panel-deco::before,
+  .tg-style-raw .tg-panel-deco::after {
+    content:""; position:absolute; width:8px; height:8px; border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, #fff, #888); top:8px;
+  }
+  .tg-style-raw .tg-panel-deco::before { left:8px; }
+  .tg-style-raw .tg-panel-deco::after { right:8px; }
+  .tg-style-luxury {
+    background:
+      repeating-linear-gradient(45deg, #0c0c0c 0 6px, #161616 6px 12px),
+      linear-gradient(160deg, #1a0a0c, #2a0f12);
+    border:2px solid #d4af37;
+  }
+  .tg-style-luxury .tg-title { color:#f3d27a; }
+  .tg-style-cute {
+    background:linear-gradient(160deg, #fff0f6, #ffe1ee); color:#7a3b56;
+    border:3px solid #ffc2dd; border-radius:22px;
+  }
+  .tg-style-cute .tg-usage, .tg-style-cute .tg-cost, .tg-style-cute .tg-title, .tg-style-cute .tg-card .v { color:#a6446f; }
+  .tg-style-cute .tg-card { background:#fff6fb; border-color:#ffd0e6; }
+  .tg-style-cute .tg-card .k { color:#c98bb0; }
+  .tg-style-cute .tg-track { stroke:#ffd0e6; }
+  .tg-style-cyber {
+    background:linear-gradient(160deg, #0a0014, #16002a);
+    border:2px solid #ff2bd6;
+  }
+  .tg-style-cyber .tg-title { color:#22e7ff; text-shadow:1px 0 #ff2bd6, -1px 0 #22e7ff; }
+  .tg-style-cyber .tg-gauge { filter:drop-shadow(0 0 8px #22e7ff) drop-shadow(0 0 4px #ff2bd6); }
+  .tg-style-retro {
+    background:linear-gradient(160deg, #f3e9cf, #e7d8b0); color:#5b3a1a;
+    border:3px double #8a6a3a; border-radius:10px;
+  }
+  .tg-style-retro .tg-usage, .tg-style-retro .tg-cost, .tg-style-retro .tg-title, .tg-style-retro .tg-card .v { color:#5b3a1a; }
+  .tg-style-retro .tg-title { font-family:Georgia, "Times New Roman", serif; }
+  .tg-style-retro .tg-card { background:#efe3c4; border-color:#b89a64; }
+  .tg-style-retro .tg-card .k { color:#8a6a3a; }
+  .tg-style-retro .tg-track { stroke:#c9b58a; }
+  .tg-style-retro .tg-tick { stroke:#8a6a3a; }
+  .tg-style-retro .tg-ticklabel { fill:#8a6a3a; }
+</style>
+</head>
+<body>
+  <h1>dsh-token-gauge · 布局方案B 预览</h1>
+  <div class="sub">仅用于视觉确认，<b>未修改插件源码</b>。逻辑与 src/gauge.ts、src/styles.ts 一致，仅收紧读数区与表盘之间的间距。</div>
+  <div class="banner">
+    <b>布局方案B（v2 压缩版 · 改动点）</b><br>
+    ① 表盘尺寸缩小（max-width 240→200px），整体更紧凑；<br>
+    ② 金额 ¥、token 用量、4 个方格整体<b>明显上移</b>：读数块用负边距(-16px)上提，<b>紧贴表盘底部</b>，与上一版「仅收 2px 间距」相比位置明显变化；<br>
+    ③ 容器 padding(12→10)、内部 gap(10→6) 收紧，<b>整体高度下降</b>；<br>
+    ④ 金额(¥) 在指针正下方、token 用量在金额下方（k tokens）、4 格在最底。
+  </div>
+
+  <div class="controls">
+    <div class="grp">
+      <label>风格 Style</label>
+      <div class="chip-row" id="styleChips"></div>
+    </div>
+    <div class="grp">
+      <label>配色 Palette</label>
+      <div class="chip-row" id="paletteChips"></div>
+    </div>
+    <div class="grp">
+      <label>模拟用量 Tokens（拖动看指针转动）</label>
+      <input type="range" id="usage" min="0" max="500000" value="260000" step="1000" />
+    </div>
+    <div class="grp">
+      <label>限额 Limit（留空 = 自动量程）</label>
+      <input type="number" id="limit" placeholder="自动" min="0" />
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="main-panel">
+      <div class="grid-title">实时预览（主舞台）</div>
+      <div id="mainMount"></div>
+    </div>
+  </div>
+
+  <div class="grid-title">六种风格 · 招牌配色一览</div>
+  <div class="grid" id="grid"></div>
+
+<script>
+// ===== 与插件 src/util.ts 一致 =====
+function formatInt(n){ return Math.round(n||0).toLocaleString('en-US'); }
+function formatMoney(n){ return '¥' + (n||0).toFixed(2); }
+function formatCompact(n){
+  const v=Math.round(n||0);
+  if(v>=1e6) return (v/1e6).toFixed(v>=1e7?0:1)+'M';
+  if(v>=1e3) return (v/1e3).toFixed(v>=1e4?0:1)+'K';
+  return String(v);
+}
+function clamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
+function autoMax(value){
+  const v=Math.max(0,value);
+  for(let exp=3;exp<=12;exp++){
+    for(const m of [1,2,5]){
+      const cand=m*Math.pow(10,exp);
+      if(cand>=v) return cand;
+    }
+  }
+  return Math.pow(10,12);
+}
+
+// ===== 与插件 src/styles.ts 一致 =====
+const STYLES=[
+  {id:'ev',labelZh:'现代电车科技',labelEn:'Modern EV Tech',className:'tg-style-ev'},
+  {id:'raw',labelZh:'原始机车',labelEn:'Raw Motorcycle',className:'tg-style-raw'},
+  {id:'luxury',labelZh:'豪华跑车',labelEn:'Luxury Sports',className:'tg-style-luxury'},
+  {id:'cute',labelZh:'可爱小车',labelEn:'Cute Car',className:'tg-style-cute'},
+  {id:'cyber',labelZh:'赛博朋克',labelEn:'Cyberpunk',className:'tg-style-cyber'},
+  {id:'retro',labelZh:'复古机械表盘',labelEn:'Retro Dial',className:'tg-style-retro'},
+];
+const PALETTES=[
+  {id:'amber',labelZh:'琥珀金',labelEn:'Amber Gold',vars:{'--c-bg':'#1c1407','--c-panel':'#2b2009','--c-main':'#f5a623','--c-track':'#3a2c0e','--c-tick':'#f5c451','--c-needle':'#ffcf5c','--c-num':'#ffe39a','--c-danger':'#ff5a3c','--c-glow':'rgba(245,166,35,0.55)','--c-sub':'#caa85e'}},
+  {id:'neon',labelZh:'霓虹蓝',labelEn:'Neon Blue',vars:{'--c-bg':'#04111f','--c-panel':'#072438','--c-main':'#22d3ee','--c-track':'#0b3550','--c-tick':'#7fe9ff','--c-needle':'#22d3ee','--c-num':'#d6fbff','--c-danger':'#ff4d6d','--c-glow':'rgba(34,211,238,0.55)','--c-sub':'#7fb6cf'}},
+  {id:'track-red',labelZh:'赛道红',labelEn:'Track Red',vars:{'--c-bg':'#1a0608','--c-panel':'#2a0a0e','--c-main':'#ff3b4e','--c-track':'#3a0d12','--c-tick':'#ff8a96','--c-needle':'#ff3b4e','--c-num':'#ffd9dd','--c-danger':'#ff7a00','--c-glow':'rgba(255,59,78,0.5)','--c-sub':'#cf7a84'}},
+  {id:'aurora',labelZh:'极光绿',labelEn:'Aurora Green',vars:{'--c-bg':'#04140d','--c-panel':'#07241a','--c-main':'#34e0a1','--c-track':'#0b3a29','--c-tick':'#8af3cd','--c-needle':'#34e0a1','--c-num':'#d8ffee','--c-danger':'#ffb020','--c-glow':'rgba(52,224,161,0.5)','--c-sub':'#79c7a6'}},
+  {id:'sakura',labelZh:'樱粉',labelEn:'Sakura Pink',vars:{'--c-bg':'#2a111d','--c-panel':'#3d1a2c','--c-main':'#ff9ecb','--c-track':'#4a2238','--c-tick':'#ffc7e2','--c-needle':'#ff9ecb','--c-num':'#ffe6f3','--c-danger':'#ff5d8f','--c-glow':'rgba(255,158,203,0.5)','--c-sub':'#d29bbb'}},
+  {id:'night-purple',labelZh:'暗夜紫',labelEn:'Night Purple',vars:{'--c-bg':'#120a26','--c-panel':'#1d1238','--c-main':'#a78bfa','--c-track':'#2a1c52','--c-tick':'#cdbcff','--c-needle':'#a78bfa','--c-num':'#ece4ff','--c-danger':'#ff5a8a','--c-glow':'rgba(167,139,250,0.5)','--c-sub':'#9b86d6'}},
+  {id:'titanium',labelZh:'钛银',labelEn:'Titanium Silver',vars:{'--c-bg':'#0e1116','--c-panel':'#1a1f27','--c-main':'#c7d0db','--c-track':'#2b323d','--c-tick':'#9aa6b4','--c-needle':'#e6edf5','--c-num':'#f2f6fb','--c-danger':'#ff5a3c','--c-glow':'rgba(199,208,219,0.35)','--c-sub':'#8b95a3'}},
+  {id:'volcano',labelZh:'火山橙',labelEn:'Volcano Orange',vars:{'--c-bg':'#1f0d04','--c-panel':'#321507','--c-main':'#ff7a18','--c-track':'#45200c','--c-tick':'#ffb070','--c-needle':'#ff7a18','--c-num':'#ffe2cc','--c-danger':'#ff3b2f','--c-glow':'rgba(255,122,24,0.5)','--c-sub':'#cf9468'}},
+];
+const SIGNATURE = { ev:'neon', raw:'titanium', luxury:'amber', cute:'sakura', cyber:'night-purple', retro:'amber' };
+
+function getPalette(id){ return PALETTES.find(p=>p.id===id) || PALETTES[1]; }
+function getStyle(id){ return STYLES.find(s=>s.id===id) || STYLES[0]; }
+function applyPalette(el,pid){
+  const p=getPalette(pid);
+  for(const [k,v] of Object.entries(p.vars)) el.style.setProperty(k,v);
+}
+
+// ===== 与插件 src/gauge.ts 一致的 SVG 渲染 =====
+const SVGNS='http://www.w3.org/2000/svg';
+const CX=100,CY=100,R=78,START=150,END=390,SWEEP=END-START;
+function polar(a,r){ const rad=a*Math.PI/180; return [CX+r*Math.cos(rad),CY+r*Math.sin(rad)]; }
+function arcPath(r,a0,a1){ const [sx,sy]=polar(a0,r),[ex,ey]=polar(a1,r); const large=a1-a0>180?1:0;
+  return `M ${sx.toFixed(2)} ${sy.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${ex.toFixed(2)} ${ey.toFixed(2)}`; }
+function mk(tag,attrs){ const el=document.createElementNS(SVGNS,tag); for(const k in attrs) el.setAttribute(k,attrs[k]); return el; }
+function todayKey(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+function createGauge(){
+  const wrap=document.createElement('div'); wrap.className='tg-gauge-wrap';
+  const s=mk('svg',{class:'tg-gauge',viewBox:'0 0 200 200'});
+  s.appendChild(mk('path',{class:'tg-track',d:arcPath(R,START,END)}));
+  const dangerEl=mk('path',{class:'tg-danger',d:arcPath(R,START+SWEEP*0.85,END)}); s.appendChild(dangerEl);
+  const labelEls=[];
+  for(let i=0;i<=10;i++){
+    const frac=i/10, ang=START+SWEEP*frac, major=i%5===0;
+    const rOut=R+(major?9:5), rIn=R-2;
+    const [x1,y1]=polar(ang,rOut),[x2,y2]=polar(ang,rIn);
+    s.appendChild(mk('line',{class:'tg-tick',x1:x1.toFixed(2),y1:y1.toFixed(2),x2:x2.toFixed(2),y2:y2.toFixed(2),'stroke-width':major?'2.5':'1.5'}));
+    if(major){
+      const [lx,ly]=polar(ang,R-18);
+      const txt=mk('text',{class:'tg-ticklabel',x:lx.toFixed(2),y:(ly+3).toFixed(2),'text-anchor':'middle'});
+      txt.textContent=String(Math.round(frac*100));
+      s.appendChild(txt); labelEls.push({el:txt,frac});
+    }
+  }
+  const needle=mk('g',{class:'tg-needle'});
+  const tipY=CY-(R-14);
+  needle.appendChild(mk('polygon',{points:`${CX},${tipY} ${CX-4},${CY+6} ${CX},${CY+14} ${CX+4},${CY+6}`}));
+  s.appendChild(needle);
+  s.appendChild(mk('circle',{class:'tg-hub',cx:CX,cy:CY,r:'6'}));
+  wrap.appendChild(s);
+
+  const readout=document.createElement('div'); readout.className='tg-readout';
+  const costEl=document.createElement('div'); costEl.className='tg-cost';
+  const usageEl=document.createElement('div'); usageEl.className='tg-usage';
+  const cards=document.createElement('div'); cards.className='tg-cards';
+  // 顺序：金额(指针下方) → token 用量 → 4 格
+  readout.append(costEl,usageEl,cards);
+  wrap.appendChild(readout);
+
+  const T=(k)=>({usage:'用量',cost:'费用',input:'输入',output:'输出',cacheHit:'缓存命中',cacheMiss:'缓存未命中'}[k]||k);
+
+  function update(p){
+    const max=p.limit&&p.limit>0?p.limit:autoMax(p.value);
+    const ratio=max>0?p.value/max:0;
+    const visual=clamp(ratio,0,1);
+    const needleAngle=START+visual*SWEEP;
+    const deg=needleAngle-270;
+    needle.style.transform=`rotate(${deg.toFixed(2)}deg)`;
+    for(const {el,frac} of labelEls) el.textContent=formatCompact(max*frac);
+    const over=ratio>=1;
+    const proximity=clamp((ratio-0.7)/0.3,0,1);
+    dangerEl.style.opacity=(proximity*0.95).toFixed(3);
+    needle.setAttribute('class',over?'tg-needle tg-over':'tg-needle');
+    costEl.textContent=formatMoney(p.cost);
+    usageEl.innerHTML=`${(p.value/1000).toLocaleString('en-US',{maximumFractionDigits:1})}<small>k tokens</small>`;
+    cards.innerHTML='';
+    const add=(k,v)=>{ const c=document.createElement('div'); c.className='tg-card'; c.innerHTML=`<div class="k">${k}</div><div class="v">${v}</div>`; cards.appendChild(c); };
+    add(T('input'),formatInt(p.state.global.input||0));
+    add(T('output'),formatInt(p.state.global.output||0));
+    const hit=p.state.global.cacheRead||0;
+    const input=p.state.global.input||0;
+    add(T('cacheHit'),formatInt(hit));
+    add(T('cacheMiss'),formatInt(Math.max(0,input-hit)));
+  }
+  return {el:wrap,update};
+}
+
+// ===== 构建一张完整面板（标题栏 + 仪表盘） =====
+function createPanel(styleId,paletteId,opts){
+  opts=opts||{};
+  const style=getStyle(styleId), pal=getPalette(paletteId);
+  const root=document.createElement('div');
+  root.className='tg-root '+style.className;
+  applyPalette(root,pal.id);
+  const head=document.createElement('div'); head.className='tg-head';
+  const title=document.createElement('div'); title.className='tg-title'; title.textContent=opts.title||style.labelZh;
+  const gear=document.createElement('div'); gear.className='tg-gear'; gear.textContent='⚙';
+  head.append(title,gear);
+  const gauge=createGauge();
+  root.append(head,gauge.el);
+  return {root,update:gauge.update};
+}
+
+// ===== 模拟状态 =====
+function mockState(value){
+  const input=Math.round(value*0.58), output=Math.round(value*0.34), cacheRead=Math.round(value*0.08);
+  return {
+    global:{input,output,cacheRead,cacheWrite:Math.round(value*0.0)},
+    sessions:{'s1':1,'s2':1,'s3':1},
+    daily:{[todayKey()]:{input:Math.round(value*0.3),output:Math.round(value*0.2),cacheRead:Math.round(value*0.05),cacheWrite:0}}
+  };
+}
+function costOf(value){ return value*8/1e6; }
+
+// ===== 初始化主舞台 =====
+let curStyle='ev', curPalette='neon';
+const mainMount=document.getElementById('mainMount');
+let mainPanel=createPanel(curStyle,curPalette,{title:'Token 仪表盘'});
+mainMount.appendChild(mainPanel.root);
+function refreshMain(){
+  const value=+document.getElementById('usage').value;
+  const limRaw=document.getElementById('limit').value;
+  const limit=limRaw===''||limRaw==null?null:+limRaw;
+  mainPanel.update({value,limit,cost:costOf(value),state:mockState(value),
+    display:{usage:true,cost:true,io:true,cacheMiss:true},t:(k)=>k,lang:'zh'});
+}
+
+const styleChips=document.getElementById('styleChips');
+STYLES.forEach(st=>{
+  const c=document.createElement('div'); c.className='chip'+(st.id===curStyle?' on':'');
+  c.textContent=st.labelZh; c.onclick=()=>{
+    curStyle=st.id;
+    [...styleChips.children].forEach(x=>x.classList.remove('on')); c.classList.add('on');
+    mainMount.removeChild(mainPanel.root);
+    mainPanel=createPanel(curStyle,curPalette,{title:'Token 仪表盘'});
+    mainMount.appendChild(mainPanel.root);
+    refreshMain();
+  };
+  styleChips.appendChild(c);
+});
+const paletteChips=document.getElementById('paletteChips');
+PALETTES.forEach(p=>{
+  const c=document.createElement('div'); c.className='chip'+(p.id===curPalette?' on':'');
+  const sw=document.createElement('span'); sw.className='swatch'; sw.style.background=p.vars['--c-main'];
+  c.appendChild(sw); c.appendChild(document.createTextNode(p.labelZh));
+  c.onclick=()=>{
+    curPalette=p.id;
+    [...paletteChips.children].forEach(x=>x.classList.remove('on')); c.classList.add('on');
+    applyPalette(mainPanel.root,p.id); refreshMain();
+  };
+  paletteChips.appendChild(c);
+});
+document.getElementById('usage').addEventListener('input',refreshMain);
+document.getElementById('limit').addEventListener('input',refreshMain);
+refreshMain();
+
+// ===== 六种风格网格 =====
+const grid=document.getElementById('grid');
+const demoValues={ev:260000,raw:340000,luxury:150000,cute:200000,cyber:440000,retro:230000};
+STYLES.forEach(st=>{
+  const cell=document.createElement('div'); cell.className='cell';
+  const tag=document.createElement('div'); tag.className='tag';
+  const pal=getPalette(SIGNATURE[st.id]);
+  tag.innerHTML=`<span>风格：<b>${st.labelZh}</b> / ${st.labelEn}</span><span class="pal">配色：${pal.labelZh}</span>`;
+  const panel=createPanel(st.id,SIGNATURE[st.id],{title:st.labelZh+' 仪表盘'});
+  const v=demoValues[st.id];
+  panel.update({value:v,limit:null,cost:costOf(v),state:mockState(v),
+    display:{usage:true,cost:true,io:true,cacheMiss:true},t:(k)=>k,lang:'zh'});
+  cell.append(tag,panel.root);
+  grid.appendChild(cell);
+});
+</script>
+</body>
+</html>
