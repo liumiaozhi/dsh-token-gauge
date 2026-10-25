@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Cost Dashboard",
+    "description": "A car-dashboard style gauge for token output speed, current-session and today spend, plus cache hit rate."
+  }
+}

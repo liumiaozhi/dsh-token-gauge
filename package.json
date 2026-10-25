@@ -1,45 +1,68 @@
 {
   "name": "dsh-token-gauge",
-  "version": "0.1.0",
-  "description": "DSH Web 侧边栏机车风格 Token 用量与费用仪表盘插件（多风格/多配色/限额/中英文/报表导出）",
-  "displayName": "Token 机车仪表盘 / Token Gauge Dashboard",
+  "version": "1.0.0",
+  "description": "Car-dashboard style Token gauge for DeepSeek Harness: live token speed, session/today usage, spend and cache hit rate, with four skins and two layouts.",
+  "displayName": "费用仪表盘 / Token Gauge",
   "type": "module",
-  "main": "./lib/index.js",
-  "dsh": {
-    "host": "./lib/index.js",
-    "client": "./lib/client.js"
+  "private": false,
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
   },
   "files": [
-    "lib",
-    "src",
+    "index.js",
+    "client.js",
     "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
     "README.md",
     "README.en.md",
-    "LICENSE"
+    "LICENSE",
+    "screenshots/*.png"
   ],
-  "scripts": {
-    "build": "node build.mjs",
-    "prepack": "node build.mjs"
-  },
   "keywords": [
+    "deepseek-harness",
     "dsh",
     "dsh-plugin",
-    "deepseek",
-    "deepseek-harness",
+    "token",
     "token-usage",
     "token-cost",
-    "dashboard",
     "gauge",
-    "sidebar"
+    "dashboard",
+    "sidebar",
+    "cache-hit-rate",
+    "web-ui"
   ],
-  "author": "WorkBuddy User",
+  "author": "liumiaozhi",
   "license": "MIT",
-  "engines": {
-    "node": ">=20"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liumiaozhi/dsh-token-gauge.git"
   },
-  "devDependencies": {
-    "@deepseek-ai/cordis": "*",
-    "esbuild": "^0.21.5",
-    "typescript": "^5.4.0"
+  "homepage": "https://github.com/liumiaozhi/dsh-token-gauge#readme",
+  "bugs": {
+    "url": "https://github.com/liumiaozhi/dsh-token-gauge/issues"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "peerDependencies": {
+    "@kenz1117/dsh-ui-usage-billing": ">=1.7.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-session"
+      ]
+    }
   }
 }

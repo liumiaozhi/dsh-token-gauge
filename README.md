@@ -1,98 +1,116 @@
-# dsh-token-gauge · Token 机车仪表盘
+# dsh-token-gauge · 费用仪表盘
 
-DeepSeek Harness（DSH）Web 侧边栏插件：以「机车风格仪表盘」实时展示 Token 用量与费用。
-指针随用量增长平滑转动，下方显示用量与费用数字；点击 ⚙ 打开设置弹窗，可切换风格、配色、显示内容、用量口径、限额（全局/日/周/月）、语言并导出用量报表。
+<p align="center">
+  <img src="screenshots/single-classical.png" alt="单表 · 古典风格" width="48%">
+  <img src="screenshots/dual-starfield.png" alt="双表 · 星空风格" width="48%">
+</p>
 
-> 默认风格：**现代电车科技**；默认配色：**霓虹蓝**；默认用量口径：**全局累计**。
+<p align="center">
+  <img src="screenshots/styles.png" alt="古典 / 马卡龙 / 极简 / 星空四种皮肤" width="78%">
+</p>
+
+<p align="center">
+  <a href="https://github.com/liumiaozhi/dsh-token-gauge/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/liumiaozhi/dsh-token-gauge?style=flat-square"></a>
+  <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/github/license/liumiaozhi/dsh-token-gauge?style=flat-square"></a>
+  <img alt="DeepSeek Harness" src="https://img.shields.io/badge/DeepSeek%20Harness-Web%20Plugin-4f46e5?style=flat-square">
+  <img alt="Token Gauge" src="https://img.shields.io/badge/UI-Token%20Gauge-0ea5e9?style=flat-square">
+</p>
+
+一个给 **DeepSeek Harness（DSH）** 用的侧边栏 Token 费用仪表盘。用老式车机 / 马卡龙 / 极简 / 星空四种皮肤，把 Token 输出速度、当前会话与今日消耗、缓存命中率做成一眼能读懂的仪表。
+
+> 界面预览使用示例数据；实际数据来自 DSH 本地会话与计费插件聚合，不伪造样本。
 
 ## 特性
 
-- **实时仪表盘**：SVG 弧形表盘，指针随 `用量 / 限额` 比值转动；超限进入红色危险区并提示。
-- **多风格（6 种）**：现代电车科技（默认）、原始机车、豪华跑车、可爱小车、赛博朋克、复古机械表盘。
-- **多配色（8 种）**：琥珀金、霓虹蓝、赛道红、极光绿、樱粉、暗夜紫、钛银、火山橙。风格与配色可自由组合。
-- **用量与费用**：显示总 Token、费用（¥），并可开启输入/输出、缓存命中、会话数、今日用量、限额进度等副卡片。
-- **限额**：支持全局 / 日 / 周 / 月 四类限额（默认全局为空=自动量程）。指针按所选口径对限额扫动。
-- **中英文界面**：设置内一键切换 zh / en。
-- **导出报表**：一键导出 CSV / JSON 用量明细（全局、分模型、按日/周/月/会话）。
-- **零外部依赖**：Client 半边纯原生 DOM/SVG，不依赖 React 等运行时；Host 半边监听 DSH 会话用量事件自行累计，可独立发布。
+- **两种结构**
+  - **单表**：左侧 Token 速度仪表盘，右侧当前会话 / 今日 Token 与金额，底部缓存命中率进度条。
+  - **双表**：上方左侧 Token 速度、右侧缓存命中率两个仪表盘；下方并列展示当前会话与今日的 Token 量、金额。
+- **四种皮肤**：古典（老式车机琥珀色）、马卡龙、极简、星空。结构 × 皮肤可自由组合，共 8 种呈现。
+- **实时 Token 速度**：读取当前会话的流式输出增量，指针在 0–500 token/秒之间平滑摆动。
+- **缓存命中率表盘**：量程 70–100%，刻度 70 / 85 / 100；低于 70% 时指针停在 70%，中央数字仍显示真实值。
+- **Token 口径**：统一以 **k（千 token）** 显示，保留两位小数并带千分位，例如 `15,098.77k`。
+- **设置入口**：卡片右上角滑杆图标；选择结构与皮肤后立即生效，并写入 `localStorage`，刷新后保留。
+- **主题自适应**：颜色来自 DSH 主题令牌，深浅色模式均可读；不引入图表库、不请求外部 CDN。
 
 ## 安装
 
-### 方式一：从市场安装（推荐）
+本插件复用 [@kenz1117/dsh-ui-usage-billing](https://github.com/kenz1117/dsh-ui-usage-billing) 的 Host 计费聚合接口 `/api/billing/usage-stats`。**请先安装计费插件**，否则仪表盘会显示 `--` / 0 值。
+
 ```bash
+# 1. 数据来源：计费插件
+dsh plugin --profile web add @kenz1117/dsh-ui-usage-billing
+
+# 2. 本仪表盘
 dsh plugin --profile web add dsh-token-gauge
-dsh web
 ```
 
-### 方式二：本地源码安装
+从源码安装（本仓库）：
+
 ```bash
-git clone <本仓库> dsh-token-gauge
-cd dsh-token-gauge
-npm install
-node build.mjs                 # 生成 lib/index.js 与 lib/client.js
-dsh plugin --profile web add . # 读取 package.json 的 dsh 字段
-dsh web
-```
-或在已运行 DSH 的情况下以本地 overlay 调试：
-```bash
-node build.mjs
-dsh web --patch ./cordis.patch.yml
+git clone https://github.com/liumiaozhi/dsh-token-gauge.git
+dsh plugin --profile web add "link:<本仓库绝对路径>"
 ```
 
-安装后重启/硬刷新 DSH Web，侧边栏出现「Token 仪表盘」Tab。开始对话产生 Token 后，仪表盘即实时更新。
+安装后重启或硬刷新 DSH Web，侧边栏底部原计费卡片位置会出现「费用仪表盘」。本插件以 slot 优先级覆盖原计费卡片，但保留计费插件的 Host 接口与其输入框费用胶囊。
 
-## 数据来源与费用口径
+## 使用
 
-- **数据源**：Host 半边订阅 DSH 会话事件流中的 `assistant/message.usage`（含输入/输出/缓存命中/缓存写入 token），自行累计，不依赖其他插件。
-- **累计视图**：全局 / 当日 / 当周 / 当月 / 会话 / 模型 六套。
-- **费用**：`费用 = (未命中输入×输入未命中单价 + 缓存命中×输入命中单价 + 缓存写入×写入单价 + 输出×输出单价) / 1,000,000`。
-  内置 DeepSeek 官方 ¥ 预设（如 deepseek-chat：输入缓存命中 0.5 / 未命中 2、输出 8；deepseek-reasoner：1 / 4 / 16），可在设置「高级·定价」中按模型自定义（¥/百万 token）。
+1. 点击卡片**右上角**的滑杆图标打开设置。
+2. 在「结构」中选择 **单表 / 双表**。
+3. 在下方四种皮肤中选择 **古典 / 马卡龙 / 极简 / 星空**。
+4. 开始对话，Token 速度表会随流式输出更新；会话与今日数据每 1.5 秒刷新。
 
-## 设置项（⚙ 弹窗）
+<p align="center">
+  <img src="screenshots/settings.png" alt="设置面板：结构 + 四种皮肤" width="62%">
+</p>
 
-| 分组 | 说明 |
-|---|---|
-| 语言 | 中文 / English |
-| 风格 | 6 种机车风格 |
-| 配色 | 8 种调色板 |
-| 用量口径 | 全局累计 / 当前会话 / 今日 / 每日 / 每周 / 每月 |
-| 显示内容 | 用量、费用、输入/输出、缓存节省、会话数、今日用量、限额进度（可独立开关） |
-| 限额 | 全局 / 日 / 周 / 月（留空为不限，仪表盘自动量程） |
-| 高级·定价 | 按模型编辑输入命中/未命中、输出、缓存写入 单价（¥/百万 token） |
-| 导出报表 | CSV / JSON |
-| 其他 | 清空用量、恢复默认 |
+## 数据与口径
+
+| 指标 | 来源 / 口径 |
+| --- | --- |
+| Token 速度 | 当前会话 `assistant/live-chunk` 文本 / reasoning / tool-call 增量估算，0–500 token/秒 |
+| 当前会话 Token | 当前会话所有轮次的 `input + output` |
+| 今日 Token | 计费插件 `byDay` 中今天的 `input + output` |
+| 当前会话金额 | `bySession.cost + subCost`（含子智能体） |
+| 今日金额 | 计费插件按实时单价表估算的今日费用 |
+| 缓存命中率 | 今日 `cacheHit / (cacheHit + cacheMiss)`，仪表盘量程 70–100% |
+
+金额为计费插件按目录价 / 自定义单价估算的参考值，不是官方账单。
 
 ## 目录结构
 
-```
+```text
 dsh-token-gauge/
-├── package.json          # dsh 字段声明 host/client 半边（市场兼容）
-├── tsconfig.json
-├── build.mjs             # esbuild 构建脚本
-├── cordis.patch.yml      # 本地 overlay
-├── src/
-│   ├── host.ts           # Host 半边：用量监听/累计/计费/持久化
-│   ├── client.ts         # Client 半边：注册侧边栏 Tab + 装配
-│   ├── gauge.ts          # SVG 仪表盘（指针/读数）
-│   ├── styles.ts         # 风格+配色定义与全局 CSS
-│   ├── settings.ts       # 设置弹窗
-│   ├── i18n.ts           # 中英文案
-│   ├── export.ts         # 报表导出
-│   └── util.ts           # 格式化/量程工具
-├── lib/                  # 构建产物（host/client），随包发布
-├── README.md / README.en.md / LICENSE
+├── package.json          # DSH bundle + Client 声明
+├── cordis.patch.yml      # 插入 token-gauge 行
+├── index.js              # Host 半边（空实现，仅承载 bundle）
+├── client.js             # Client 半边：仪表盘 / 设置 / 样式
+├── locale/
+│   ├── zh.json           # 插件市场中文标题与描述
+│   └── en.json
+├── icon.svg              # 插件图标
+├── screenshots/          # README 预览图
+└── README.md / README.en.md / LICENSE
 ```
 
-## 上架市场
-
-本包已按 DSH 插件规范命名（`dsh` 字段 + `lib/index.js` / `lib/client.js`），并声明 `files` 白名单。
-发布到 npm 后，其他用户即可 `dsh plugin --profile web add dsh-token-gauge` 安装发现：
+## 开发
 
 ```bash
-npm version patch        # 或 minor/major
-npm publish              # 须使用官方源 registry.npmjs.org
+git clone https://github.com/liumiaozhi/dsh-token-gauge.git
+cd dsh-token-gauge
+# 本插件是手写 Client bundle，无构建步骤
+dsh plugin --profile web add "link:$PWD"
 ```
+
+修改 `client.js` 后，DSH 的 Client HMR 会在文件变化后重新加载模块；没有热更新时刷新页面即可。
+
+## 兼容与限制
+
+- 面向 DSH Web（`platform: web`），需要 `@deepseek-ai/dsh-client-ui-sidebar` 与 `@deepseek-ai/dsh-client-ui-session`。
+- 数据接口依赖 `@kenz1117/dsh-ui-usage-billing >= 1.7.0`；未安装时仪表盘仍会渲染，但数据为 `--`。
+- 缓存命中率低于 70% 时指针停在 70% 刻度，中央数字保留真实值，避免表盘外推。
+- README 图片为按实际组件样式生成的示例预览，数据为演示值。
 
 ## 许可
 
-MIT
+[MIT](LICENSE) © 2026 liumiaozhi
