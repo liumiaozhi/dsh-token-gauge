@@ -1,16 +1,16 @@
 window.__ModuleLoader__.load({
-  id: 'dsh-token-gauge',
+  id: 'dsh-cost-dashboard',
   factory(require) {
     const React = require('react');
     const h = React.createElement;
 
-    const NS = 'token-gauge';
+    const NS = 'cost-dashboard';
     const MAX_SPEED = 500;
     const POLL_MS = 1500;
     const START_ANGLE = 155;
     const SWEEP_ANGLE = 230;
-    const STYLE_KEY = 'dsh-token-gauge-style-v2';
-    const LAYOUT_KEY = 'dsh-token-gauge-layout-v1';
+    const STYLE_KEY = 'dsh-cost-dashboard-style-v2';
+    const LAYOUT_KEY = 'dsh-cost-dashboard-layout-v1';
     const STYLES = [
       { id: 'classical', label: 'styleClassical', swatch: ['#d97706', '#92400e'] },
       { id: 'macaron', label: 'styleMacaron', swatch: ['#f472b6', '#a78bfa'] },
@@ -925,7 +925,7 @@ window.__ModuleLoader__.load({
             return;
           }
           try {
-            const response = await fetch('/api/billing/usage-stats', {
+            const response = await fetch('/api/token-gauge/usage-stats', {
               cache: 'no-store',
               headers: { accept: 'application/json' },
               signal: controller.signal,
@@ -1126,7 +1126,7 @@ window.__ModuleLoader__.load({
       inject: ['slots', 'locale', 'sessions'],
       apply(ctx) {
         const liveMeter = createLiveMeter(ctx);
-        ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'token-gauge: dictionaries');
+        ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'cost-dashboard: dictionaries');
         ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
           name: 'sidebar.footer.action',
           id: 'usage-billing',

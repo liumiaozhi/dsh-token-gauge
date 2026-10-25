@@ -29,25 +29,26 @@ A sidebar Token gauge for **DeepSeek Harness (DSH)**. Four skins — Vintage, Ma
 - **Cache gauge**: 70–100% range with 70 / 75 / 100 ticks; below 70% the needle parks at 70% while the readout keeps the real value.
 - **Token formatting**: always in **k (thousand tokens)**, two decimals and thousands separators, e.g. `15,098.77k`.
 - **Settings**: the slider icon at the card's top-right opens structure/skin choices; selections persist in `localStorage`.
-- **Theme-aware** and dependency-free on the client: no chart library, no external CDN.
+- **Theme-aware** and dependency-free: no billing plugin, no chart library, no external CDN. The Host half aggregates DSH session logs itself.
 
 ## Install
 
-The dashboard reuses the Host aggregation endpoint `/api/billing/usage-stats` from [@kenz1117/dsh-ui-usage-billing](https://github.com/kenz1117/dsh-ui-usage-billing). Install it first, otherwise the gauge shows `--` / zero.
+The plugin ships its own Host half: it reads DSH's `sessionPersistence` logs and aggregates usage locally. **No billing plugin is required.**
 
 ```bash
-dsh plugin --profile web add @kenz1117/dsh-ui-usage-billing
 dsh plugin --profile web add dsh-token-gauge
 ```
 
-From source:
+From source (current repository version):
 
 ```bash
 git clone https://github.com/liumiaozhi/dsh-token-gauge.git
 dsh plugin --profile web add "link:<absolute-path-to-repo>"
 ```
 
-Restart or hard-refresh DSH Web. The card replaces the original billing trigger at the same sidebar-footer slot, while the billing plugin keeps serving its Host API and composer cost chip.
+> If npm still serves an older `dsh-token-gauge`, install from source until 1.1.0 is published.
+
+Restart or hard-refresh DSH Web. The card replaces the original billing trigger at the same sidebar-footer slot without needing that plugin.
 
 ## Usage
 
@@ -66,12 +67,12 @@ Restart or hard-refresh DSH Web. The card replaces the original billing trigger 
 | --- | --- |
 | Token speed | Streaming text / reasoning / tool-call deltas of the current session, estimated over a 0–500 tokens/s scale |
 | Current-session tokens | `input + output` over all turns of the current session |
-| Today tokens | Today's `input + output` in the billing plugin's `byDay` snapshot |
-| Current-session spend | `bySession.cost + subCost` (sub-agents included) |
-| Today spend | Billing plugin estimate at current model prices |
+| Today tokens | Today's `input + output` from the plugin's own `byDay` aggregate |
+| Current-session spend | Estimated from successful model calls in the current session |
+| Today spend | Estimated from DeepSeek Flash / Pro list prices with peak/off-peak bands |
 | Cache hit rate | Today's `cacheHit / (cacheHit + cacheMiss)`, gauge range 70–100% |
 
-Amounts are billing-plugin estimates, not an official invoice.
+The Host half reads `assistant/message.usage` from DSH `sessionPersistence`, adds 0.02 CNY per web-search call, and prices DeepSeek Flash (2 / 0.04 / 8 CNY per million tokens) and Pro (9 / 0.3 / 27). Peak hours are weekdays 09–12 and 14–18; weekends and off-peak are half price. Unknown models fall back to Flash rates. Amounts are estimates, not an official invoice.
 
 ## Development
 
@@ -86,7 +87,7 @@ dsh plugin --profile web add "link:$PWD"
 ## Compatibility
 
 - DSH Web (`platform: web`), requiring `@deepseek-ai/dsh-client-ui-sidebar` and `@deepseek-ai/dsh-client-ui-session`.
-- Requires `@kenz1117/dsh-ui-usage-billing >= 1.7.0` for data.
+- Host half uses DSH's built-in `sessionPersistence` and `webServer`; no billing plugin.
 - Preview images are generated from the actual component styles with sample data.
 
 ## License

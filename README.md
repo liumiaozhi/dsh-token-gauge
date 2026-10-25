@@ -34,24 +34,22 @@
 
 ## 安装
 
-本插件复用 [@kenz1117/dsh-ui-usage-billing](https://github.com/kenz1117/dsh-ui-usage-billing) 的 Host 计费聚合接口 `/api/billing/usage-stats`。**请先安装计费插件**，否则仪表盘会显示 `--` / 0 值。
+本插件自带 Host 半边，直接从 DSH 的 `sessionPersistence` 读取本地会话日志并聚合用量，**不依赖任何计费插件**。
 
 ```bash
-# 1. 数据来源：计费插件
-dsh plugin --profile web add @kenz1117/dsh-ui-usage-billing
-
-# 2. 本仪表盘
 dsh plugin --profile web add dsh-token-gauge
 ```
 
-从源码安装（本仓库）：
+从源码安装（本仓库当前版本）：
 
 ```bash
 git clone https://github.com/liumiaozhi/dsh-token-gauge.git
 dsh plugin --profile web add "link:<本仓库绝对路径>"
 ```
 
-安装后重启或硬刷新 DSH Web，侧边栏底部原计费卡片位置会出现「费用仪表盘」。本插件以 slot 优先级覆盖原计费卡片，但保留计费插件的 Host 接口与其输入框费用胶囊。
+> npm 上的 `dsh-token-gauge` 若仍为旧版，请先用源码安装；发布 1.1.0 后可直接按名称安装。
+
+安装后重启或硬刷新 DSH Web，侧边栏底部会出现「费用仪表盘」。插件以 slot 优先级覆盖原计费卡片，但不需要计费插件本身。
 
 ## 使用
 
@@ -70,12 +68,12 @@ dsh plugin --profile web add "link:<本仓库绝对路径>"
 | --- | --- |
 | Token 速度 | 当前会话 `assistant/live-chunk` 文本 / reasoning / tool-call 增量估算，0–500 token/秒 |
 | 当前会话 Token | 当前会话所有轮次的 `input + output` |
-| 今日 Token | 计费插件 `byDay` 中今天的 `input + output` |
-| 当前会话金额 | `bySession.cost + subCost`（含子智能体） |
-| 今日金额 | 计费插件按实时单价表估算的今日费用 |
+| 今日 Token | 本插件 `byDay` 中今天的 `input + output` |
+| 当前会话金额 | 当前会话所有成功模型调用按单价估算 |
+| 今日金额 | 本插件按 DeepSeek Flash / Pro 列表价与峰谷时段估算的今日费用 |
 | 缓存命中率 | 今日 `cacheHit / (cacheHit + cacheMiss)`，仪表盘量程 70–100% |
 
-金额为计费插件按目录价 / 自定义单价估算的参考值，不是官方账单。
+Host 半边读取 DSH 的 `sessionPersistence` 会话日志，按 `assistant/message.usage` 聚合；搜索调用按 0.02 元/次估算。DeepSeek Flash（2 / 0.04 / 8 元每百万 token）与 Pro（9 / 0.3 / 27）使用官方列表价，工作日高峰外与周末按半价；其他模型回退到 Flash 价格估算。金额是参考值，不是官方账单。
 
 ## 目录结构
 
@@ -83,7 +81,8 @@ dsh plugin --profile web add "link:<本仓库绝对路径>"
 dsh-token-gauge/
 ├── package.json          # DSH bundle + Client 声明
 ├── cordis.patch.yml      # 插入 token-gauge 行
-├── index.js              # Host 半边（空实现，仅承载 bundle）
+├── index.js              # Host 半边：注册 /api/token-gauge/usage-stats
+├── usage-server.js       # 会话日志聚合 + DeepSeek 峰谷计价
 ├── client.js             # Client 半边：仪表盘 / 设置 / 样式
 ├── locale/
 │   ├── zh.json           # 插件市场中文标题与描述
@@ -107,7 +106,7 @@ dsh plugin --profile web add "link:$PWD"
 ## 兼容与限制
 
 - 面向 DSH Web（`platform: web`），需要 `@deepseek-ai/dsh-client-ui-sidebar` 与 `@deepseek-ai/dsh-client-ui-session`。
-- 数据接口依赖 `@kenz1117/dsh-ui-usage-billing >= 1.7.0`；未安装时仪表盘仍会渲染，但数据为 `--`。
+- Host 半边依赖 DSH 自带的 `sessionPersistence` 与 `webServer` 服务；不需要计费插件。
 - 缓存命中率低于 70% 时指针停在 70% 刻度，中央数字保留真实值，避免表盘外推。
 - README 图片为按实际组件样式生成的示例预览，数据为演示值。
 
