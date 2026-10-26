@@ -1,0 +1,91 @@
+name: release
+
+# Publish on an annotated or lightweight tag push: `git push origin v1.2.0`.
+# The tag must match package.json's version, otherwise the run fails before
+# anything reaches the registry.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (must already exist as tag v<version>)'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Verify the tag matches package.json
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          echo "tag=$tag package.json=$pkg"
+          if [ "$tag" != "$pkg" ]; then
+            echo "::error::tag '$tag' does not match package.json version '$pkg'; bump the version or retag"
+            exit 1
+          fi
+
+      - name: Require the npm token secret
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "::error::NPM_TOKEN is not set — add it under Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
+            # Pre-release tag (v1.2.0-rc.1) goes to the `next` dist-tag so
+            # `npm install dsh-token-gauge` keeps resolving the stable release.
+            npm publish --registry=https://registry.npmjs.org --access public --tag next
+          else
+            npm publish --registry=https://registry.npmjs.org --access public
+          fi
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
+            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes --prerelease
+          else
+            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes --latest
+          fi
+
+      - name: Job summary
+        if: always()
+        run: |
+          set -euo pipefail
+          name="$(node -p "require('./package.json').name")"
+          version="$(node -p "require('./package.json').version")"
+          {
+            echo "### ${name}@${version}"
+            echo ""
+            echo "- npm: https://www.npmjs.com/package/${name}/v/${version}"
+            echo "- tag: ${GITHUB_REF_NAME}"
+          } >> "$GITHUB_STEP_SUMMARY"

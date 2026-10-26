@@ -84,6 +84,8 @@ dsh plugin --profile web add "link:$PWD"
 
 `client.js` is a hand-written Client bundle; no build step. DSH Client HMR reloads it after edits; refresh the page if HMR is unavailable.
 
+The release process (version rules, pre-flight checks, `NPM_TOKEN` setup, rollback and troubleshooting) is documented in [RELEASING.md](RELEASING.md). Pushing a `v*` tag runs `.github/workflows/release.yml`, which publishes to npm and creates the GitHub Release.
+
 ## Compatibility
 
 - DSH Web (`platform: web`), requiring `@deepseek-ai/dsh-client-ui-sidebar` and `@deepseek-ai/dsh-client-ui-session`.

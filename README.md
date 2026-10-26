@@ -103,6 +103,8 @@ dsh plugin --profile web add "link:$PWD"
 
 修改 `client.js` 后，DSH 的 Client HMR 会在文件变化后重新加载模块；没有热更新时刷新页面即可。
 
+发布流程（版本号规则、自检清单、`NPM_TOKEN` 配置、回滚与常见故障）见 [RELEASING.md](RELEASING.md)。推送 `v*` 标签会触发 `.github/workflows/release.yml` 自动发布到 npm 并创建 GitHub Release。
+
 ## 兼容与限制
 
 - 面向 DSH Web（`platform: web`），需要 `@deepseek-ai/dsh-client-ui-sidebar` 与 `@deepseek-ai/dsh-client-ui-session`。
