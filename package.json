@@ -1,6 +1,6 @@
 {
   "name": "dsh-token-gauge",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Self-contained car-dashboard style Token gauge for DeepSeek Harness: live token speed, session/today usage, spend and cache hit rate, with four skins and two layouts.",
   "displayName": "费用仪表盘 / Token Gauge",
   "type": "module",

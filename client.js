@@ -1,5 +1,9 @@
 window.__ModuleLoader__.load({
-  id: 'dsh-cost-dashboard',
+  // The loader keys module factories by package name and treats a row whose
+  // factory never registered as missing, re-requesting its bundle. A bundle
+  // that registers under any other id therefore executes twice and throws
+  // "duplicate factory registration". Keep this identical to package.json name.
+  id: 'dsh-token-gauge',
   factory(require) {
     const React = require('react');
     const h = React.createElement;

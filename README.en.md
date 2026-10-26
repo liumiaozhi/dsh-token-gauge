@@ -90,6 +90,12 @@ dsh plugin --profile web add "link:$PWD"
 - Host half uses DSH's built-in `sessionPersistence` and `webServer`; no billing plugin.
 - Preview images are generated from the actual component styles with sample data.
 
+## Changelog
+
+### 1.1.1
+
+- Fix a startup failure on DSH 0.2.x: the Client bundle now registers under its package name `dsh-token-gauge` instead of `dsh-cost-dashboard`. The loader matches module factories by package name, so the old id left the row unregistered, the bundle was re-requested and executed twice, and the second registration threw `duplicate factory registration` — surfacing as `web boot: 1 entry did not activate` / `dsh-token-gauge: import failed`.
+
 ## License
 
 [MIT](LICENSE) © 2026 liumiaozhi

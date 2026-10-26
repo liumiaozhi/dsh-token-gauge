@@ -110,6 +110,12 @@ dsh plugin --profile web add "link:$PWD"
 - 缓存命中率低于 70% 时指针停在 70% 刻度，中央数字保留真实值，避免表盘外推。
 - README 图片为按实际组件样式生成的示例预览，数据为演示值。
 
+## 更新日志
+
+### 1.1.1
+
+- 修复在 DSH 0.2.x 上无法启动：Client bundle 的注册 id 由 `dsh-cost-dashboard` 改为包名 `dsh-token-gauge`。加载器按包名匹配模块工厂，旧 id 不被识别，该行会被判定缺失并重新拉取 bundle，导致同一个 bundle 执行两次并抛出 `duplicate factory registration`，最终表现为 `web boot: 1 entry did not activate` / `dsh-token-gauge: import failed`。
+
 ## 许可
 
 [MIT](LICENSE) © 2026 liumiaozhi
