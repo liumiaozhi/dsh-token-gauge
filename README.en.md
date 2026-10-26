@@ -95,6 +95,7 @@ dsh plugin --profile web add "link:$PWD"
 ### 1.1.1
 
 - Fix a startup failure on DSH 0.2.x: the Client bundle now registers under its package name `dsh-token-gauge` instead of `dsh-cost-dashboard`. The loader matches module factories by package name, so the old id left the row unregistered, the bundle was re-requested and executed twice, and the second registration threw `duplicate factory registration` — surfacing as `web boot: 1 entry did not activate` / `dsh-token-gauge: import failed`.
+- Declare `engines.dsh` and `dsh.compatibility` for DSH `>=0.2.0-rc.1 <0.3.0-0`, so an incompatible runtime is rejected at install time with a clear message instead of surfacing as a boot failure.
 
 ## License
 

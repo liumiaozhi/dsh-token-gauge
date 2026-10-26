@@ -115,6 +115,7 @@ dsh plugin --profile web add "link:$PWD"
 ### 1.1.1
 
 - 修复在 DSH 0.2.x 上无法启动：Client bundle 的注册 id 由 `dsh-cost-dashboard` 改为包名 `dsh-token-gauge`。加载器按包名匹配模块工厂，旧 id 不被识别，该行会被判定缺失并重新拉取 bundle，导致同一个 bundle 执行两次并抛出 `duplicate factory registration`，最终表现为 `web boot: 1 entry did not activate` / `dsh-token-gauge: import failed`。
+- 新增 `engines.dsh` 与 `dsh.compatibility` 声明，限定 DSH `>=0.2.0-rc.1 <0.3.0-0`。不兼容的运行时会在安装阶段被 DSH 拦下并给出明确提示，而不是等到启动失败才暴露。
 
 ## 许可
 
